@@ -7,6 +7,7 @@ Creates all tables and indexes
 import logging
 import sys
 from pathlib import Path
+from sqlalchemy import text
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -46,13 +47,13 @@ def init_database(db_url: str = "sqlite:///traffic_monitoring.db",
             # Check if tables exist
             if db_url.startswith("sqlite"):
                 result = session.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'"
+                    text("SELECT name FROM sqlite_master WHERE type='table'")
                 ).fetchall()
                 tables = [r[0] for r in result]
             else:
                 # PostgreSQL
                 result = session.execute(
-                    "SELECT tablename FROM pg_tables WHERE schemaname='public'"
+                    text("SELECT tablename FROM pg_tables WHERE schemaname='public'")
                 ).fetchall()
                 tables = [r[0] for r in result]
             
@@ -61,7 +62,7 @@ def init_database(db_url: str = "sqlite:///traffic_monitoring.db",
             # Check indexes
             if db_url.startswith("sqlite"):
                 result = session.execute(
-                    "SELECT name FROM sqlite_master WHERE type='index'"
+                    text("SELECT name FROM sqlite_master WHERE type='index'")
                 ).fetchall()
                 indexes = [r[0] for r in result]
                 logger.info(f"Created indexes: {indexes}")
