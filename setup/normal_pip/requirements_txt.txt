@@ -1,0 +1,56 @@
+# Traffic Monitoring System - Requirements
+# Tested and working configuration for Python 3.8+
+
+# GUI Framework
+PyQt5==5.15.9
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.12.2
+
+# Computer Vision & Image Processing
+opencv-python==4.8.1.78
+Pillow==10.0.1
+
+# Machine Learning & AI
+torch==2.0.1
+torchvision==0.15.2
+ultralytics==8.0.196
+numpy==1.24.4
+
+# Database & ORM
+SQLAlchemy==2.0.21
+alembic==1.12.0
+
+# Scientific Computing
+scipy==1.10.1
+matplotlib==3.7.2
+
+# Data Processing
+pandas==2.0.3
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+packaging==23.1
+setuptools==68.2.2
+
+# Development & Testing (optional)
+pytest==7.4.2
+pytest-cov==4.1.0
+
+# Additional utilities for video processing
+imageio==2.31.3
+imageio-ffmpeg==0.4.9
+
+# Configuration management  
+pyyaml==6.0.1
+
+# Logging enhancements
+colorlog==6.7.0
+
+# For model downloads and management
+tqdm==4.66.1
+requests==2.31.0
+urllib3==2.0.5
+
+# System utilities
+psutil==5.9.5
