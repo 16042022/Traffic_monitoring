@@ -1,0 +1,48 @@
+{
+    "database": {
+        "url": "sqlite:///traffic_monitoring.db",
+        "echo": false,
+        "pool_size": 5
+    },
+    "video_processing": {
+        "batch_size": 100,
+        "save_interval": 30,
+        "max_processing_threads": 2
+    },
+    "ai_model": {
+        "type": "yolov8",
+        "model_path": null,
+        "confidence_threshold": 0.5,
+        "nms_threshold": 0.4
+    },
+    "virtual_line": {
+        "p1_x": 445,
+        "p1_y": 331,
+        "p2_x": 1265,
+        "p2_y": 426,
+        "counting_direction": "up"
+    },
+    "traffic_monitoring": {
+        "stop_time_threshold": 20.0,
+        "congestion_thresholds": {
+            "low": 5,
+            "medium": 15,
+            "high": 25,
+            "very_high": 35
+        }
+    },
+    "ui": {
+        "language": "vi",
+        "theme": "light",
+        "video_display_size": [800, 600],
+        "fps_display": 30
+    },
+    "paths": {
+        "video_storage": "./videos",
+        "export_path": "./exports",
+        "log_path": "./logs"
+    },
+    "logging": {
+        "level": "INFO"
+    }
+}

@@ -1,0 +1,75 @@
+# environment.yml
+# Anaconda environment configuration for Traffic Monitoring System
+# Usage: conda env create -f environment.yml
+
+name: traffic_monitoring
+channels:
+  - conda-forge
+  - defaults
+  - pytorch
+
+dependencies:
+  # Python version
+  - python=3.9
+
+  # Core scientific packages
+  - numpy=1.24.4
+  - scipy=1.10.1
+  - matplotlib=3.7.2
+  - pandas=2.0.3
+
+  # Image processing
+  - pillow=10.0.1
+  - opencv=4.8.1
+
+  # Machine Learning - PyTorch (CPU version)
+  - pytorch=2.0.1
+  - torchvision=0.15.2
+  - cpuonly  # Remove this line if you want CUDA/GPU support
+
+  # Database
+  - sqlalchemy=2.0.21
+
+  # Utilities
+  - pyyaml=6.0.1
+  - requests=2.31.0
+  - tqdm=4.66.1
+  - psutil=5.9.5
+  - python-dateutil=2.8.2
+  - pytz=2023.3
+  - packaging=23.1
+  - setuptools=68.2.2
+  - urllib3=2.0.5
+
+  # Development tools
+  - pytest=7.4.2
+
+  # Pip packages (not available in conda)
+  - pip
+  - pip:
+    # GUI Framework
+    - PyQt5==5.15.9
+    - PyQt5-Qt5==5.15.2
+    - PyQt5-sip==12.12.2
+    
+    # AI/ML packages
+    - ultralytics==8.0.196
+    
+    # Database migration
+    - alembic==1.12.0
+    
+    # Logging
+    - colorlog==6.7.0
+    
+    # Video processing
+    - imageio==2.31.3
+    - imageio-ffmpeg==0.4.9
+    
+    # Testing
+    - pytest-cov==4.1.0
+
+# Alternative for GPU support:
+# Replace the pytorch section above with:
+# - pytorch=2.0.1
+# - torchvision=0.15.2
+# - pytorch-cuda=11.8  # or 11.7 depending on your CUDA version
