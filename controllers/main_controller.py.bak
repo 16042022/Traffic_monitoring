@@ -1,0 +1,213 @@
+# controllers/main_controller.py
+from typing import Optional
+from PyQt5.QtCore import QObject, pyqtSignal
+
+from .base_controller import BaseController
+from .video_controller import VideoController
+from .analysis_controller import AnalysisController
+from .history_controller import HistoryController
+from utils import config_manager, setup_logger
+from dal import db_manager
+
+
+class MainController(BaseController):
+    """
+    Main controller - orchestrates all sub-controllers
+    Entry point for the application logic
+    """
+    
+    # Additional signals
+    application_ready = pyqtSignal()
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Initialize configuration
+        self.config = config_manager.load_config()
+        
+        # Setup logging
+        log_file = self.config.get('paths.log_path', './logs') + '/traffic_monitoring.log'
+        setup_logger(
+            name="traffic_monitoring",
+            log_level=self.config.get('logging.level', 'INFO'),
+            log_file=log_file
+        )
+        
+        # Initialize database
+        self._init_database()
+        
+        # Sub-controllers
+        self.video_controller = VideoController(self)
+        self.analysis_controller = AnalysisController(self)
+        self.history_controller = HistoryController(self)
+        
+        # Connect inter-controller signals
+        self._connect_controllers()
+        
+    def _init_database(self):
+        """Initialize database connection"""
+        try:
+            db_url = self.config.get('database.url', 'sqlite:///traffic_monitoring.db')
+            db_manager.initialize(db_url, echo=False)
+            db_manager.create_all_tables()
+            self.logger.info("Database initialized successfully")
+        except Exception as e:
+            self._handle_error(e, "Lỗi khởi tạo cơ sở dữ liệu")
+            raise
+    
+    def _connect_controllers(self):
+        """Connect signals between controllers"""
+        # When video is loaded, enable analysis
+        self.video_controller.video_loaded.connect(
+            self.analysis_controller.on_video_loaded
+        )
+        
+        # When analysis completes, refresh history
+        self.analysis_controller.analysis_completed.connect(
+            self.history_controller.refresh_history
+        )
+        
+        # Error propagation
+        for controller in [self.video_controller, 
+                          self.analysis_controller, 
+                          self.history_controller]:
+            controller.error_occurred.connect(self.error_occurred)
+            controller.info_message.connect(self.info_message)
+    
+    def set_main_view(self, main_view):
+        """
+        Set main view and distribute sub-views
+        
+        Args:
+            main_view: Main window instance
+        """
+        self._view = main_view
+        
+        # Check and set sub-views safely
+        if hasattr(main_view, 'video_player_widget'):
+            self.video_controller.set_view(main_view.video_player_widget)
+        else:
+            self.logger.warning("MainWindow missing video_player_widget")
+            
+        if hasattr(main_view, 'analysis_panel'):
+            self.analysis_controller.set_view(main_view.analysis_panel)
+        else:
+            self.logger.warning("MainWindow missing analysis_panel")
+            
+        if hasattr(main_view, 'history_widget'):
+            self.history_controller.set_view(main_view.history_widget)
+        else:
+            self.logger.warning("MainWindow missing history_widget")
+        
+        # Connect main view signals
+        self._connect_view_signals()
+        
+        # Application is ready
+        self.application_ready.emit()
+        self._show_info("Ứng dụng sẵn sàng")
+    
+    def set_model(self, orchestrator):
+        """
+        Set model (VideoAnalysisOrchestrator)
+        
+        Args:
+            orchestrator: VideoAnalysisOrchestrator instance
+        """
+        self._model = orchestrator
+        
+        # Share model with sub-controllers
+        self.video_controller.set_model(orchestrator)
+        self.analysis_controller.set_model(orchestrator)
+        # History controller uses repositories directly
+        
+        self._connect_model_callbacks()
+    
+    def _connect_view_signals(self):
+        """Connect main view signals"""
+        if not self._view:
+            return
+            
+        # File menu actions - check if exist
+        if hasattr(self._view, 'action_open_video'):
+            self._view.action_open_video.triggered.connect(
+                self.video_controller.open_video_dialog
+            )
+        
+        if hasattr(self._view, 'action_export_results'):
+            self._view.action_export_results.triggered.connect(
+                self.export_results
+            )
+            
+        if hasattr(self._view, 'action_settings'):
+            self._view.action_settings.triggered.connect(
+                self.show_settings
+            )
+            
+        if hasattr(self._view, 'action_exit'):
+            self._view.action_exit.triggered.connect(
+                self.shutdown_application
+            )
+        
+        # View menu actions
+        if hasattr(self._view, 'action_show_history'):
+            self._view.action_show_history.triggered.connect(
+                self.toggle_history_view
+            )
+    
+    def _connect_model_callbacks(self):
+        """Connect model callbacks"""
+        # Model callbacks are handled by sub-controllers
+        pass
+    
+    def export_results(self):
+        """Export current results"""
+        try:
+            if hasattr(self, 'analysis_controller') and self.analysis_controller.has_results():
+                self.analysis_controller.export_results()
+            else:
+                self._show_info("Không có kết quả để xuất")
+        except Exception as e:
+            self._handle_error(e, "Lỗi xuất kết quả")
+    
+    def show_settings(self):
+        """Show settings dialog"""
+        # TODO: Implement settings dialog
+        self._show_info("Chức năng cài đặt đang được phát triển")
+    
+    def toggle_history_view(self):
+        """Toggle history view visibility"""
+        if hasattr(self, 'history_controller'):
+            self.history_controller.toggle_history_view()
+    
+    def shutdown_application(self):
+        """Shutdown application properly"""
+        try:
+            self.logger.info("Shutting down application...")
+            
+            # Stop any ongoing processing
+            if hasattr(self, 'video_controller'):
+                self.video_controller.stop_playback()
+                
+            if hasattr(self, 'analysis_controller'):
+                self.analysis_controller.stop_analysis()
+            
+            # Close database
+            db_manager.close()
+            
+            # Close main window
+            if self._view:
+                self._view.close()
+                
+        except Exception as e:
+            self.logger.error(f"Error during shutdown: {e}")
+    
+    def cleanup(self):
+        """Cleanup resources"""
+        super().cleanup()
+        
+        # Cleanup sub-controllers
+        for controller in [self.video_controller,
+                          self.analysis_controller, 
+                          self.history_controller]:
+            if hasattr(controller, 'cleanup'):
+                controller.cleanup()
